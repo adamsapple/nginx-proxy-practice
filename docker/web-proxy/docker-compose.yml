@@ -1,0 +1,52 @@
+version: '3'
+# https://riina-k.net/programming/docker-compose-nginx-reverse-proxy-ssl/
+services:
+  web-proxy:
+    image: jwilder/nginx-proxy
+    container_name: web-proxy
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      #DEFAULT_HOST: ${HOST_NAME}
+      DEFAULT_HOST: foo.bar.buzz.net
+      #DHPARAM_GENERATION: "false"
+      TZ: Japan
+    privileged: true
+    volumes:
+      - ./data/certs:/etc/nginx/certs:ro
+      - web-proxy:/etc/nginx/vhost.d
+      - web-proxy:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      #- ./data/my_custom_proxy_settings.conf:/etc/nginx/conf.d/my_custom_proxy_settings.conf
+      #- ./logs:/var/log/nginx
+    labels:
+      com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
+    restart: on-failure
+    networks:
+      - web-proxy-network
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt
+    restart: always
+    environment:
+      NGINX_PROXY_CONTAINER: web-proxy
+    privileged: true
+    depends_on:
+      - web-proxy
+    volumes:
+      - ./data/certs:/etc/nginx/certs:rw
+      - web-proxy:/etc/nginx/vhost.d
+      - web-proxy:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - web-proxy-network
+ 
+volumes:
+  web-proxy:
+
+networks:
+  web-proxy-network:
+    external: true
+

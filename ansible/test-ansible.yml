@@ -1,0 +1,47 @@
+- hosts: test_local
+  connection: local
+
+  tasks:
+    - name: install utilities
+      apt:
+        state: present
+        update_cache: yes
+        name:
+          - net-tools
+
+    - name: install docker
+      apt:
+        state: present
+        update_cache: yes
+        name: 
+          - docker
+          - docker-compose
+      #    - name: remove docker
+      #apt:
+      #  state: absent
+      #  name:
+      #    - docker:
+      #    - docker-compose:
+      #
+    - name: setting docker
+      shell: |
+        usermod -aG docker hardrock_is_my_life
+        #sudo chmod +x /usr/local/bin/docker-compose
+      become: yes
+    
+    - name: create docker network.
+      docker_network:
+        name: web-proxy-network
+        driver: bridge
+        state: present
+
+    - name: run web-proxy
+      docker_compose:
+        project_src: ../docker/web-proxy
+        state: present
+
+    - name: run web-hw
+      docker_compose:
+        project_src: ../docker/web-hw
+        state: present
+
