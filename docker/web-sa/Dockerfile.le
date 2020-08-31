@@ -1,0 +1,15 @@
+FROM nginx:alpine
+ 
+RUN apk update
+RUN apk add --no-cache --no-progress curl supervisor 
+RUN apk add --no-cache --no-progress certbot
+#         m h d M w cmd
+RUN echo '0 0 * * 2 certbot renew ; nginx -s reopen' > /var/spool/cron/crontabs/root
+
+#RUN crond -b
+#ENTRYPOINT ["nginx", "-g", "daemon off;"]
+
+ADD ./conf/supervisor/cron.ini  /etc/supervisor.d/
+ADD ./conf/supervisor/nginx.ini /etc/supervisor.d/
+
+ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"]
